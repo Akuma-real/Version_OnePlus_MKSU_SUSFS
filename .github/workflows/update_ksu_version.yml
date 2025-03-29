@@ -9,26 +9,45 @@ jobs:
   update-version:
     runs-on: ubuntu-latest
     steps:
-      - name: 检出main分支
+      - name: 检出仓库
         uses: actions/checkout@v3
+      
+      - name: 配置Git
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+      
+      - name: 安装依赖
+        run: |
+          sudo apt update
+          sudo apt install -y git curl
       
       - name: 获取KSU版本号
         id: extract_version
         run: |
-          # 直接克隆ShirkNeko的KernelSU仓库susfs-dev分支
-          git clone https://github.com/ShirkNeko/KernelSU.git --branch susfs-dev --depth=1
-          cd KernelSU
+          # 设置分支参数（与原始action相同）
+          echo "BRANCH=-s susfs-dev" >> $GITHUB_ENV
           
-          # 计算版本号
+          # 创建与原始action相同的临时工作目录
+          mkdir -p kernel_workspace/kernel_platform
+          cd kernel_workspace/kernel_platform
+          
+          # 获取KernelSU
+          curl -LSs "https://raw.githubusercontent.com/ShirkNeko/KernelSU/main/kernel/setup.sh" | bash ${{ env.BRANCH }} || true
+          
+          # 如果目录不存在则直接克隆
+          if [ ! -d "./KernelSU" ]; then
+            git clone https://github.com/ShirkNeko/KernelSU.git --branch susfs-dev --depth=1
+          fi
+          
+          # 进入KernelSU目录计算版本号
+          cd ./KernelSU
           KSU_VERSION=$(expr $(/usr/bin/git rev-list --count HEAD) "+" 12505)
           echo "KSUVER=$KSU_VERSION" >> $GITHUB_ENV
           echo "当前KSU版本: $KSU_VERSION"
       
       - name: 创建或更新version分支
         run: |
-          git config --global user.name "GitHub Actions"
-          git config --global user.email "actions@github.com"
-          
           # 创建孤立的version分支或使用现有的version分支
           if git ls-remote --heads origin version | grep version; then
             git fetch origin version
