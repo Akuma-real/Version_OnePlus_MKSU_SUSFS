@@ -19,9 +19,8 @@ jobs:
           git clone https://github.com/ShirkNeko/KernelSU.git --depth=1
           cd KernelSU
           
-          # 计算版本号
-          COMMIT_COUNT=$(git rev-list --count HEAD)
-          KSU_VERSION=$(expr $COMMIT_COUNT "+" 12505)
+          # 按照原脚本中的方式计算版本号
+          KSU_VERSION=$(expr $(/usr/bin/git rev-list --count HEAD) "+" 12505)
           echo "KSU_VERSION=$KSU_VERSION" >> $GITHUB_ENV
           echo "当前KSU版本: $KSU_VERSION"
       
@@ -30,8 +29,18 @@ jobs:
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
           
-          # 创建version分支
-          git checkout -b version || git checkout version
+          # 创建孤立的version分支或使用现有的version分支
+          if git ls-remote --heads origin version | grep version; then
+            git fetch origin version
+            git checkout version
+          else
+            # 创建孤立分支
+            git checkout --orphan version
+            git rm -rf . || true
+          fi
+          
+          # 只保留version.txt文件
+          rm -rf ./* ./.* || true
           
           # 更新version.txt
           echo "${{ env.KSU_VERSION }}" > version.txt
