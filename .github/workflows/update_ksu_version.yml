@@ -15,15 +15,11 @@ jobs:
       - name: 获取KSU版本号
         id: extract_version
         run: |
-          # 创建临时目录
-          mkdir -p kernel_workspace/kernel_platform
-          cd kernel_workspace/kernel_platform
+          # 直接克隆ShirkNeko的KernelSU仓库susfs-dev分支
+          git clone https://github.com/ShirkNeko/KernelSU.git --branch susfs-dev --depth=1
+          cd KernelSU
           
-          # 使用setup.sh脚本，确保与原始构建脚本一致
-          curl -LSs "https://raw.githubusercontent.com/ShirkNeko/KernelSU/main/kernel/setup.sh" | bash -s -- -s susfs-dev
-          
-          # 进入KernelSU目录计算版本号
-          cd ./KernelSU
+          # 计算版本号
           KSU_VERSION=$(expr $(/usr/bin/git rev-list --count HEAD) "+" 12505)
           echo "KSUVER=$KSU_VERSION" >> $GITHUB_ENV
           echo "当前KSU版本: $KSU_VERSION"
