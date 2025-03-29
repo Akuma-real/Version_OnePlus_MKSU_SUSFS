@@ -15,13 +15,13 @@ jobs:
       - name: 获取KSU版本号
         id: extract_version
         run: |
-          # 克隆KernelSU仓库
-          git clone https://github.com/ShirkNeko/KernelSU.git --depth=1
+          # 克隆KernelSU仓库（使用ShirkNeko的仓库和main分支）
+          git clone https://github.com/ShirkNeko/KernelSU.git --branch main --depth=1
           cd KernelSU
           
           # 按照原脚本中的方式计算版本号
           KSU_VERSION=$(expr $(/usr/bin/git rev-list --count HEAD) "+" 12505)
-          echo "KSU_VERSION=$KSU_VERSION" >> $GITHUB_ENV
+          echo "KSUVER=$KSU_VERSION" >> $GITHUB_ENV
           echo "当前KSU版本: $KSU_VERSION"
       
       - name: 创建或更新version分支
@@ -42,7 +42,7 @@ jobs:
           fi
           
           # 更新version.txt
-          echo "${{ env.KSU_VERSION }}" > version.txt
+          echo "${{ env.KSUVER }}" > version.txt
           git add version.txt
-          git commit -m "更新KSU版本至 ${{ env.KSU_VERSION }}" || echo "无变更"
+          git commit -m "更新KSU版本至 ${{ env.KSUVER }}" || echo "无变更"
           git push -f origin version 
