@@ -1,0 +1,40 @@
+name: 更新KSU版本
+
+on:
+  workflow_dispatch:  # 允许手动触发
+  schedule:
+    - cron: '0 */6 * * *'  # 每6小时运行一次
+
+jobs:
+  update-version:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出main分支
+        uses: actions/checkout@v3
+      
+      - name: 获取KSU版本号
+        id: extract_version
+        run: |
+          # 克隆KernelSU仓库
+          git clone https://github.com/ShirkNeko/KernelSU.git --depth=1
+          cd KernelSU
+          
+          # 计算版本号
+          COMMIT_COUNT=$(git rev-list --count HEAD)
+          KSU_VERSION=$(expr $COMMIT_COUNT "+" 12505)
+          echo "KSU_VERSION=$KSU_VERSION" >> $GITHUB_ENV
+          echo "当前KSU版本: $KSU_VERSION"
+      
+      - name: 创建或更新version分支
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          
+          # 创建version分支
+          git checkout -b version || git checkout version
+          
+          # 更新version.txt
+          echo "${{ env.KSU_VERSION }}" > version.txt
+          git add version.txt
+          git commit -m "更新KSU版本至 ${{ env.KSU_VERSION }}" || echo "无变更"
+          git push -f origin version 
